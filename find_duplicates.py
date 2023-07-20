@@ -3,11 +3,12 @@ import os
 import hashlib
 import sys
 from tqdm import tqdm
+from collections import defaultdict
 
 
 class DuplicateFileFinder:
     def __init__(self, output_file):
-        self.hashes = {}
+        self.hashes = defaultdict(list)
         self.output_file = output_file
 
     def get_file_hash(self, file_path):
@@ -20,16 +21,22 @@ class DuplicateFileFinder:
     def process_file(self, file_path):
         file_name = os.path.basename(file_path)
         file_hash = self.get_file_hash(file_path)
-        if file_hash in self.hashes:
-            result = f"Found identical files: {self.hashes[file_hash]} and {file_name}"
-            print(result)
-            self.output_file.write(result + "\n")
-        else:
-            self.hashes[file_hash] = file_name
+        self.hashes[file_hash].append(file_path)
+        if len(self.hashes[file_hash]) > 1:
+            print(f"Found duplicate file: {file_name}")
 
     def process_files(self, files_to_process):
         for file_path in tqdm(files_to_process):
             self.process_file(file_path)
+        self.write_duplicates_to_output()
+
+    def write_duplicates_to_output(self):
+        for file_hash, file_names in self.hashes.items():
+            if len(file_names) > 1:
+                self.output_file.write(
+                    f"Duplicate files:\n")
+                for file_name in file_names:
+                    self.output_file.write(f"\t{file_name}\n")
 
 
 def collect_files(paths, types=None):
