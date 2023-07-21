@@ -39,18 +39,20 @@ class DuplicateFileFinder:
                     self.output_file.write(f"\t{file_name}\n")
 
 
-def collect_files(paths, types=None):
-    files_to_process = []
+def collect_files(paths, types, output_file):
+    files_to_process = set()
     for path in paths:
         if os.path.isfile(path):
             if not types or any(path.endswith(t) for t in types):
-                files_to_process.append(path)
+                files_to_process.add(path)
         elif os.path.isdir(path):
-            print(f"Processing folder: {path}")
+            processing_folder_message = f"Processing folder: {path}"
+            print(processing_folder_message)
+            output_file.write(processing_folder_message + "\n")
             for file_name in os.listdir(path):
                 file_path = os.path.join(path, file_name)
                 if os.path.isfile(file_path) and (not types or any(file_path.endswith(t) for t in types)):
-                    files_to_process.append(file_path)
+                    files_to_process.add(file_path)
         else:
             print(f'Error: "{path}" is not a valid file or directory.')
     return files_to_process
@@ -75,12 +77,12 @@ def main():
 
     try:
         all_paths = list(set(args.initial_paths + (args.paths or [])))
-        files_to_process = collect_files(all_paths, args.types)
+        output_file = open(args.output, "w")
+        files_to_process = collect_files(all_paths, args.types, output_file)
         if not files_to_process:
             print("No files to process.")
             sys.exit(0)
 
-        output_file = open(args.output, "w")
         duplicate_finder = DuplicateFileFinder(output_file)
         duplicate_finder.process_files(files_to_process)
 
