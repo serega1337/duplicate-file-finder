@@ -31,12 +31,21 @@ class DuplicateFileFinder:
         self.write_duplicates_to_output()
 
     def write_duplicates_to_output(self):
-        for file_hash, file_names in self.hashes.items():
-            if len(file_names) > 1:
-                self.output_file.write(
-                    f"Duplicate files:\n")
-                for file_name in file_names:
-                    self.output_file.write(f"\t{file_name}\n")
+        for file_hash, file_paths in self.hashes.items():
+            if len(file_paths) < 2:
+                continue
+            self.output_file.write(f"Duplicate files:\n")
+            for file_path in file_paths:
+                self.output_file.write(f"\t{os.path.abspath(file_path)}\n")
+
+    def delete_duplicates(self):
+        for file_hash, file_paths in self.hashes.items():
+            if len(file_paths) < 2:
+                continue
+            for file_path in file_paths[1:]:
+                file_name = os.path.basename(file_path)
+                os.remove(file_path)
+                print(f"Deleted: {file_name}")
 
 
 def collect_files(paths, types, output_file):
@@ -46,7 +55,7 @@ def collect_files(paths, types, output_file):
             if not types or any(path.endswith(t) for t in types):
                 files_to_process.add(path)
         elif os.path.isdir(path):
-            processing_folder_message = f"Processing folder: {path}"
+            processing_folder_message = f"Processing folder: {os.path.abspath(path)}"
             print(processing_folder_message)
             output_file.write(processing_folder_message + "\n")
             for file_name in os.listdir(path):
@@ -85,6 +94,9 @@ def main():
 
         duplicate_finder = DuplicateFileFinder(output_file)
         duplicate_finder.process_files(files_to_process)
+        confirm_delete_files = input("Delete the duplicate files? (y/n): ")
+        if confirm_delete_files.lower() == 'y':
+            duplicate_finder.delete_duplicates()
 
         output_file.close()
     except KeyboardInterrupt:
