@@ -75,7 +75,8 @@ def collect_files(paths, types, output_file):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Find identical files")
+        description="Find identical files",
+        epilog="Example usage: python find_duplicates.py /path/to/folder1 /path/to/folder2 -t txt pdf")
     parser.add_argument("initial_paths", nargs="*",
                         help="Folders or files to be processed.")
     parser.add_argument("--paths", nargs="*",
