@@ -10,6 +10,8 @@ class DuplicateFileFinder:
     def __init__(self, output_file):
         self.hashes = defaultdict(list)
         self.output_file = output_file
+        self.duplicate_count = 0
+        self.deleted_count = 0
 
     def get_file_hash(self, file_path):
         with open(file_path, "rb") as f:
@@ -23,11 +25,13 @@ class DuplicateFileFinder:
         file_hash = self.get_file_hash(file_path)
         self.hashes[file_hash].append(file_path)
         if len(self.hashes[file_hash]) > 1:
+            self.duplicate_count += 1
             print(f"Found duplicate file: {file_name}")
 
     def process_files(self, files_to_process):
         for file_path in tqdm(files_to_process):
             self.process_file(file_path)
+        print(f"Found {self.duplicate_count} duplicate files.")
         self.write_duplicates_to_output()
 
     def write_duplicates_to_output(self):
@@ -46,6 +50,7 @@ class DuplicateFileFinder:
                 file_name = os.path.basename(file_path)
                 os.remove(file_path)
                 print(f"Deleted: {file_name}")
+                self.deleted_count += 1
 
 
 def collect_files(paths, types, output_file):
@@ -94,9 +99,17 @@ def main():
 
         duplicate_finder = DuplicateFileFinder(output_file)
         duplicate_finder.process_files(files_to_process)
-        confirm_delete_files = input("Delete the duplicate files? (y/n): ")
-        if confirm_delete_files.lower() == 'y':
-            duplicate_finder.delete_duplicates()
+        if duplicate_finder.duplicate_count:
+            confirm_delete_files = input("Delete the duplicate files? (y/n): ")
+            if confirm_delete_files.lower() == 'y':
+                duplicate_finder.delete_duplicates()
+                confirm_delete_log = input("Delete the log file? (y/n): ")
+                if confirm_delete_log.lower() == 'y':
+                    os.remove(args.output)
+                else:
+                    output_file.write(
+                        f"Deleted {duplicate_finder.deleted_count} files.\n")
+                print(f"Deleted {duplicate_finder.deleted_count} files.\n")
 
         output_file.close()
     except KeyboardInterrupt:
