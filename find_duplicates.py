@@ -54,11 +54,15 @@ class DuplicateFileFinder:
                 self.deleted_count += 1
 
 
-def collect_files(paths, types, output_file):
+def check_file(path, types, max_size):
+    return (not types or any(path.endswith(t) for t in types)) and os.path.getsize(path) < max_size
+
+
+def collect_files(paths, types, max_size, output_file):
     files_to_process = set()
     for path in paths:
         if os.path.isfile(path):
-            if not types or any(path.endswith(t) for t in types):
+            if check_file(path, types, max_size):
                 files_to_process.add(path)
         elif os.path.isdir(path):
             processing_folder_message = f"Processing folder: {os.path.abspath(path)}"
@@ -66,7 +70,7 @@ def collect_files(paths, types, output_file):
             output_file.write(processing_folder_message + "\n")
             for file_name in os.listdir(path):
                 file_path = os.path.join(path, file_name)
-                if os.path.isfile(file_path) and (not types or any(file_path.endswith(t) for t in types)):
+                if os.path.isfile(file_path) and check_file(file_path, types, max_size):
                     files_to_process.add(file_path)
         else:
             print(f'Error: "{path}" is not a valid file or directory.')
@@ -83,13 +87,15 @@ def create_output_file():
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Find identical files",
-        epilog="Example usage: python find_duplicates.py /path/to/folder1 /path/to/folder2 -t txt pdf")
+        epilog="Example usage: python find_duplicates.py /path/to/folder1 /path/to/folder2 -t txt pdf -m 10")
     parser.add_argument("initial_paths", nargs="*",
                         help="Folders or files to be processed.")
     parser.add_argument("--paths", nargs="*",
                         help="Folders or files to be processed.")
     parser.add_argument("--types", "-t", nargs="*",
                         help="Select only specific file types.")
+    parser.add_argument("--max_size", "-m", type=int, default=float('inf'),
+                        help="Maximum file size in MB (default: no limit)")
     return parser.parse_args()
 
 
@@ -102,7 +108,8 @@ def main():
     try:
         output_file = create_output_file()
         all_paths = list(set(args.initial_paths + (args.paths or [])))
-        files_to_process = collect_files(all_paths, args.types, output_file)
+        files_to_process = collect_files(
+            all_paths, args.types, args.max_size * 1e6, output_file)
         if not files_to_process:
             print("No files to process.")
             output_file.close()
