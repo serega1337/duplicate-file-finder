@@ -4,6 +4,7 @@ import hashlib
 import sys
 from tqdm import tqdm
 from collections import defaultdict
+from datetime import datetime
 
 
 class DuplicateFileFinder:
@@ -81,8 +82,6 @@ def main():
                         help="Folders or files to be processed.")
     parser.add_argument("--types", "-t", nargs="*",
                         help="Select only specific file types.")
-    parser.add_argument("-o", "--output", default="result.txt",
-                        help="Path to the output file (default: result.txt)")
     args = parser.parse_args()
 
     if len(sys.argv) == 1:
@@ -90,11 +89,14 @@ def main():
         sys.exit(0)
 
     try:
+        timestamp = datetime.now().strftime("%y-%m-%d_%H-%M-%S")
+        output_file_name = f"log_{timestamp}.txt"
+        output_file = open(output_file_name, "w")
         all_paths = list(set(args.initial_paths + (args.paths or [])))
-        output_file = open(args.output, "w")
         files_to_process = collect_files(all_paths, args.types, output_file)
         if not files_to_process:
             print("No files to process.")
+            output_file.close()
             sys.exit(0)
 
         duplicate_finder = DuplicateFileFinder(output_file)
@@ -103,13 +105,12 @@ def main():
             confirm_delete_files = input("Delete the duplicate files? (y/n): ")
             if confirm_delete_files.lower() == 'y':
                 duplicate_finder.delete_duplicates()
-                confirm_delete_log = input("Delete the log file? (y/n): ")
-                if confirm_delete_log.lower() == 'y':
-                    os.remove(args.output)
-                else:
-                    output_file.write(
-                        f"Deleted {duplicate_finder.deleted_count} files.\n")
+                output_file.write(
+                    f"Deleted {duplicate_finder.deleted_count} files.\n")
                 print(f"Deleted {duplicate_finder.deleted_count} files.\n")
+        confirm_delete_log = input("Delete the log file? (y/n): ")
+        if confirm_delete_log.lower() == 'y':
+            os.remove(output_file_name)
 
         output_file.close()
     except KeyboardInterrupt:
