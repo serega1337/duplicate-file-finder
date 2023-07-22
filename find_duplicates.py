@@ -79,7 +79,11 @@ def collect_files(paths, types, max_size, output_file):
 
 def create_output_file():
     timestamp = datetime.now().strftime("%y-%m-%d_%H-%M-%S")
-    output_file_name = f"log_{timestamp}.txt"
+    folder_name = 'logs'
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+    output_file_name = f"{folder_name}/log_{timestamp}.txt"
+
     output_file = open(output_file_name, "w")
     return output_file, output_file_name
 
