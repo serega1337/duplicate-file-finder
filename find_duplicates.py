@@ -81,7 +81,7 @@ def create_output_file():
     timestamp = datetime.now().strftime("%y-%m-%d_%H-%M-%S")
     output_file_name = f"log_{timestamp}.txt"
     output_file = open(output_file_name, "w")
-    return output_file
+    return output_file, output_file_name
 
 
 def parse_arguments():
@@ -106,7 +106,7 @@ def main():
         sys.exit(0)
 
     try:
-        output_file = create_output_file()
+        output_file, output_file_name = create_output_file()
         all_paths = list(set(args.initial_paths + (args.paths or [])))
         files_to_process = collect_files(
             all_paths, args.types, args.max_size * 1e6, output_file)
