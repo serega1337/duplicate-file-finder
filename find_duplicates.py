@@ -96,14 +96,16 @@ def parse_arguments():
                         help="Select only specific file types.")
     parser.add_argument("--max_size", "-m", type=int, default=float('inf'),
                         help="Maximum file size in MB (default: no limit)")
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
+
     return parser.parse_args()
 
 
 def main():
     args = parse_arguments()
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(0)
 
     try:
         output_file, output_file_name = create_output_file()
